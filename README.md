@@ -39,7 +39,7 @@ Copied from <a href="https://github.com/go-logr/stdr">https://github.com/go-logr
 
 
 
-## <a name="New">func</a> [New](/src/target/stdr.go?s=4698:4733#L169)
+## <a name="New">func</a> [New](/src/target/stdr.go?s=5051:5086#L178)
 ``` go
 func New(std StdLogger) logr.Logger
 ```
@@ -58,7 +58,7 @@ You can also just instantiate your own:
 
 
 
-## <a name="SetVerbosity">func</a> [SetVerbosity](/src/target/stdr.go?s=2063:2091#L72)
+## <a name="SetVerbosity">func</a> [SetVerbosity](/src/target/stdr.go?s=2071:2099#L73)
 ``` go
 func SetVerbosity(v int) int
 ```
@@ -72,10 +72,15 @@ SetVerbosity is concurrent-safe.
 
 
 
-## <a name="DefaultFormatter">type</a> [DefaultFormatter](/src/target/stdr.go?s=2137:2235#L76)
+## <a name="DefaultFormatter">type</a> [DefaultFormatter](/src/target/stdr.go?s=2145:2492#L77)
 ``` go
 type DefaultFormatter struct {
-    HideKeys bool // show [fieldValue] instead [fieldKey=fieldValue]
+    // TimestampFormat sets the format used to print log timestamp.
+    // If TimestampFormat is set, make sure timestamp flags are off
+    // for the std. logger. Otherwise there will be duplicate timestamp
+    // in the output.
+    TimestampFormat string
+    HideKeys        bool // show [fieldValue] instead [fieldKey=fieldValue]
 }
 ```
 
@@ -87,7 +92,7 @@ type DefaultFormatter struct {
 
 
 
-### <a name="DefaultFormatter.Format">func</a> (DefaultFormatter) [Format](/src/target/stdr.go?s=2260:2308#L81)
+### <a name="DefaultFormatter.Format">func</a> (DefaultFormatter) [Format](/src/target/stdr.go?s=2517:2565#L87)
 ``` go
 func (f DefaultFormatter) Format(e Entry) string
 ```
@@ -96,7 +101,7 @@ Format a log entry.
 
 
 
-## <a name="Entry">type</a> [Entry](/src/target/stdr.go?s=342:1289#L21)
+## <a name="Entry">type</a> [Entry](/src/target/stdr.go?s=350:1297#L22)
 ``` go
 type Entry struct {
     // Err is an error being logged using `logr Error(err error ...)` method.
@@ -130,7 +135,7 @@ It is used by `Formatter` to log format output.
 
 
 
-## <a name="Formatter">type</a> [Formatter](/src/target/stdr.go?s=1331:1381#L42)
+## <a name="Formatter">type</a> [Formatter](/src/target/stdr.go?s=1339:1389#L43)
 ``` go
 type Formatter interface {
     Format(Entry) string
@@ -147,7 +152,7 @@ Formatter formats a log entry Entry.
 
 
 
-## <a name="Logger">type</a> [Logger](/src/target/stdr.go?s=3598:4326#L140)
+## <a name="Logger">type</a> [Logger](/src/target/stdr.go?s=3951:4679#L149)
 ``` go
 type Logger struct {
     Std StdLogger
@@ -173,35 +178,35 @@ type Logger struct {
 
 
 
-### <a name="Logger.Enabled">func</a> (Logger) [Enabled](/src/target/stdr.go?s=6646:6676#L245)
+### <a name="Logger.Enabled">func</a> (Logger) [Enabled](/src/target/stdr.go?s=6999:7029#L254)
 ``` go
 func (l Logger) Enabled() bool
 ```
 
 
 
-### <a name="Logger.Error">func</a> (Logger) [Error](/src/target/stdr.go?s=6736:6803#L249)
+### <a name="Logger.Error">func</a> (Logger) [Error](/src/target/stdr.go?s=7089:7156#L258)
 ``` go
 func (l Logger) Error(err error, msg string, kvList ...interface{})
 ```
 
 
 
-### <a name="Logger.Info">func</a> (Logger) [Info](/src/target/stdr.go?s=6363:6418#L234)
+### <a name="Logger.Info">func</a> (Logger) [Info](/src/target/stdr.go?s=6716:6771#L243)
 ``` go
 func (l Logger) Info(msg string, kvList ...interface{})
 ```
 
 
 
-### <a name="Logger.V">func</a> (Logger) [V](/src/target/stdr.go?s=4809:4853#L176)
+### <a name="Logger.V">func</a> (Logger) [V](/src/target/stdr.go?s=5162:5206#L185)
 ``` go
 func (l Logger) V(level int) logr.InfoLogger
 ```
 
 
 
-### <a name="Logger.WithName">func</a> (Logger) [WithName](/src/target/stdr.go?s=5150:5199#L185)
+### <a name="Logger.WithName">func</a> (Logger) [WithName](/src/target/stdr.go?s=5503:5552#L194)
 ``` go
 func (l Logger) WithName(name string) logr.Logger
 ```
@@ -212,14 +217,14 @@ in the provided name string, but this library does not actually enforce that.
 
 
 
-### <a name="Logger.WithValues">func</a> (Logger) [WithValues](/src/target/stdr.go?s=5312:5373#L194)
+### <a name="Logger.WithValues">func</a> (Logger) [WithValues](/src/target/stdr.go?s=5665:5726#L203)
 ``` go
 func (l Logger) WithValues(kvList ...interface{}) logr.Logger
 ```
 
 
 
-## <a name="StdLogger">type</a> [StdLogger](/src/target/stdr.go?s=3463:3596#L135)
+## <a name="StdLogger">type</a> [StdLogger](/src/target/stdr.go?s=3816:3949#L144)
 ``` go
 type StdLogger interface {
     // Output is the same as log.Output and log.Logger.Output.
