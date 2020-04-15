@@ -12,6 +12,7 @@ import (
 	"sort"
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/go-logr/logr"
 )
@@ -74,13 +75,21 @@ func SetVerbosity(v int) int {
 }
 
 type DefaultFormatter struct {
-	HideKeys bool // show [fieldValue] instead [fieldKey=fieldValue]
+	// TimestampFormat sets the format used to print log timestamp.
+	// If TimestampFormat is set, make sure timestamp flags are off
+	// for the std. logger. Otherwise there will be duplicate timestamp
+	// in the output.
+	TimestampFormat string
+	HideKeys        bool // show [fieldValue] instead [fieldKey=fieldValue]
 }
 
 // Format a log entry.
 func (f DefaultFormatter) Format(e Entry) string {
 	var b strings.Builder
 
+	if f.TimestampFormat != "" {
+		fmt.Fprintf(&b, "%s ", time.Now().Format(f.TimestampFormat))
+	}
 	if e.Err != nil {
 		fmt.Fprintf(&b, "[Error=%v] ", e.Err)
 	}

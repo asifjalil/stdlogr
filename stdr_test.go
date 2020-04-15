@@ -67,3 +67,17 @@ func TestVerbosity(t *testing.T) {
 		t.Errorf("Expected 0 output but got %q", b.String())
 	}
 }
+
+func TestTimestampFormat(t *testing.T) {
+	const testString = "test"
+	var b bytes.Buffer
+
+	l := Logger{
+		Std: log.New(&b, "", 0),
+		Formatter: DefaultFormatter{
+			TimestampFormat: "2006-01-02 03:04:05 -0700",
+		},
+	}
+	l.Info(testString)
+	t.Log(b.String())
+}
