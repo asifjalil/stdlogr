@@ -80,10 +80,8 @@ type DefaultFormatter struct {
 	// for the std. logger. Otherwise there will be duplicate timestamp
 	// in the output.
 	TimestampFormat string
-	// ForceQuote will quote string output using %q.
+	// ForceQuote true quotes all fieldKeys and fieldValues using %q.
 	ForceQuote bool
-	// QuoteEmptyFields will quote empty field value
-	QuoteEmptyFields bool
 	// HideKeys true will show [fieldValue] instead of [fieldKey=fieldValue]
 	HideKeys bool
 }
@@ -106,40 +104,20 @@ func (f DefaultFormatter) Format(e Entry) string {
 	// write fields (keys/values)
 	f.writeFields(&b, e.KeysAndValues)
 	// log message
-	if f.ForceQuote {
-		fmt.Fprintf(&b, " %q\n", e.Message)
-	} else {
-		fmt.Fprintf(&b, " %s\n", e.Message)
-	}
+	fmt.Fprintf(&b, " %s\n", e.Message)
 	return b.String()
 }
-
-func (f DefaultFormatter) needsQuoting(text string) bool {
-	if f.ForceQuote {
-		return true
-	}
-	if f.QuoteEmptyFields && len(text) == 0 {
-		return true
-	}
-	for _, ch := range text {
-		if !((ch >= 'a' && ch <= 'z') ||
-			(ch >= 'A' && ch <= 'Z') ||
-			(ch >= '0' && ch <= '9') ||
-			ch == '-' || ch == '.' || ch == '_' || ch == '/' || ch == '@' || ch == '^' || ch == '+') {
-			return true
-		}
-	}
-	return false
-}
-
 func (f DefaultFormatter) appendKeyValue(b *strings.Builder, key string, value interface{}) {
 	if b.Len() > 0 {
 		b.WriteString(" ")
 	}
 	b.WriteString("[")
 	if !f.HideKeys {
-		b.WriteString(key)
-		b.WriteString("=")
+		if f.ForceQuote {
+			fmt.Fprintf(b, "%q=", key)
+		} else {
+			fmt.Fprintf(b, "%s=", key)
+		}
 	}
 	f.appendValue(b, value)
 	b.WriteString("]")
@@ -151,10 +129,10 @@ func (f *DefaultFormatter) appendValue(b *strings.Builder, value interface{}) {
 		stringVal = fmt.Sprint(value)
 	}
 
-	if !f.needsQuoting(stringVal) {
-		b.WriteString(stringVal)
+	if f.ForceQuote {
+		fmt.Fprintf(b, "%q", stringVal)
 	} else {
-		b.WriteString(fmt.Sprintf("%q", stringVal))
+		b.WriteString(stringVal)
 	}
 }
 

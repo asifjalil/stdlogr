@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"log"
 	"testing"
+
+	"github.com/go-logr/logr"
 )
 
 func TestInfo(t *testing.T) {
@@ -14,21 +16,6 @@ func TestInfo(t *testing.T) {
 	l := New(log.New(&b, "", 0))
 	l.Info(testString)
 	if expect := fmt.Sprintf("[verbosity=0] %s\n", testString); b.String() != expect {
-		t.Errorf("log output should match %q is %q", expect, b.String())
-	}
-}
-
-func TestQuoteInfo(t *testing.T) {
-	const testString = "test\ntest"
-	var b bytes.Buffer
-	l := Logger{
-		Std: log.New(&b, "", 0),
-		Formatter: DefaultFormatter{
-			ForceQuote: true,
-		},
-	}
-	l.Info(testString)
-	if expect := fmt.Sprintf("[verbosity=0] %q\n", testString); b.String() != expect {
 		t.Errorf("log output should match %q is %q", expect, b.String())
 	}
 }
@@ -64,11 +51,17 @@ func TestNameAppend(t *testing.T) {
 }
 
 func TestInfoKV(t *testing.T) {
-	const testString = "test"
+	const testString = `test 
+test`
 	var b bytes.Buffer
-	l := New(log.New(&b, "", 0))
+	var l logr.Logger = Logger{
+		Std: log.New(&b, "", 0),
+		Formatter: DefaultFormatter{
+			ForceQuote: true,
+		},
+	}
 	l.Info(testString, testString, testString)
-	if expect := fmt.Sprintf("[verbosity=0] [%[1]s=%[1]v] %[1]s\n", testString); b.String() != expect {
+	if expect := fmt.Sprintf("[verbosity=0] [%[1]q=%[1]q] %[1]s\n", testString); b.String() != expect {
 		t.Errorf("log output should match %q is %q", expect, b.String())
 	}
 }
