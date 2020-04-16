@@ -9,11 +9,26 @@ import (
 )
 
 func TestInfo(t *testing.T) {
-	const testString = "test"
+	const testString = "test\ntest"
 	var b bytes.Buffer
 	l := New(log.New(&b, "", 0))
 	l.Info(testString)
 	if expect := fmt.Sprintf("[verbosity=0] %s\n", testString); b.String() != expect {
+		t.Errorf("log output should match %q is %q", expect, b.String())
+	}
+}
+
+func TestQuoteInfo(t *testing.T) {
+	const testString = "test\ntest"
+	var b bytes.Buffer
+	l := Logger{
+		Std: log.New(&b, "", 0),
+		Formatter: DefaultFormatter{
+			ForceQuote: true,
+		},
+	}
+	l.Info(testString)
+	if expect := fmt.Sprintf("[verbosity=0] %q\n", testString); b.String() != expect {
 		t.Errorf("log output should match %q is %q", expect, b.String())
 	}
 }

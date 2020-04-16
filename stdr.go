@@ -80,7 +80,12 @@ type DefaultFormatter struct {
 	// for the std. logger. Otherwise there will be duplicate timestamp
 	// in the output.
 	TimestampFormat string
-	HideKeys        bool // show [fieldValue] instead [fieldKey=fieldValue]
+	// ForceQuote will quote string output using %q.
+	ForceQuote bool
+	// QuoteEmptyFields will quote empty field value
+	QuoteEmptyFields bool
+	// HideKeys true will show [fieldValue] instead of [fieldKey=fieldValue]
+	HideKeys bool
 }
 
 // Format a log entry.
@@ -99,13 +104,58 @@ func (f DefaultFormatter) Format(e Entry) string {
 	fmt.Fprintf(&b, "[verbosity=%d]", e.Verbosity)
 
 	// write fields (keys/values)
-	if len(e.KeysAndValues) > 0 {
-		b.WriteString(" ")
-	}
 	f.writeFields(&b, e.KeysAndValues)
 	// log message
-	fmt.Fprintf(&b, " %s\n", e.Message)
+	if f.ForceQuote {
+		fmt.Fprintf(&b, " %q\n", e.Message)
+	} else {
+		fmt.Fprintf(&b, " %s\n", e.Message)
+	}
 	return b.String()
+}
+
+func (f DefaultFormatter) needsQuoting(text string) bool {
+	if f.ForceQuote {
+		return true
+	}
+	if f.QuoteEmptyFields && len(text) == 0 {
+		return true
+	}
+	for _, ch := range text {
+		if !((ch >= 'a' && ch <= 'z') ||
+			(ch >= 'A' && ch <= 'Z') ||
+			(ch >= '0' && ch <= '9') ||
+			ch == '-' || ch == '.' || ch == '_' || ch == '/' || ch == '@' || ch == '^' || ch == '+') {
+			return true
+		}
+	}
+	return false
+}
+
+func (f DefaultFormatter) appendKeyValue(b *strings.Builder, key string, value interface{}) {
+	if b.Len() > 0 {
+		b.WriteString(" ")
+	}
+	b.WriteString("[")
+	if !f.HideKeys {
+		b.WriteString(key)
+		b.WriteString("=")
+	}
+	f.appendValue(b, value)
+	b.WriteString("]")
+}
+
+func (f *DefaultFormatter) appendValue(b *strings.Builder, value interface{}) {
+	stringVal, ok := value.(string)
+	if !ok {
+		stringVal = fmt.Sprint(value)
+	}
+
+	if !f.needsQuoting(stringVal) {
+		b.WriteString(stringVal)
+	} else {
+		b.WriteString(fmt.Sprintf("%q", stringVal))
+	}
 }
 
 func (f DefaultFormatter) writeFields(b *strings.Builder, kvList []interface{}) {
@@ -114,7 +164,7 @@ func (f DefaultFormatter) writeFields(b *strings.Builder, kvList []interface{}) 
 	for i := 0; i < len(kvList); i += 2 {
 		k, ok := kvList[i].(string)
 		if !ok {
-			fmt.Fprintf(b, "**key is not a string: %[1]v(type=%[1]T**)", kvList[i])
+			fmt.Fprintf(b, "-- key is not a string: type=%[1]T value=%[1]v --", kvList[i])
 			return
 		}
 		var v interface{}
@@ -125,16 +175,9 @@ func (f DefaultFormatter) writeFields(b *strings.Builder, kvList []interface{}) 
 		vals[k] = v
 	}
 	sort.Strings(keys)
-	for i, k := range keys {
+	for _, k := range keys {
 		v := vals[k]
-		if i > 0 {
-			b.WriteString(" ")
-		}
-		if f.HideKeys {
-			fmt.Fprintf(b, "[%v]", v)
-		} else {
-			fmt.Fprintf(b, "[%s=%v]", k, v)
-		}
+		f.appendKeyValue(b, k, v)
 	}
 	return
 }
